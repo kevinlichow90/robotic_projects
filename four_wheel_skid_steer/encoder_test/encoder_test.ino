@@ -18,14 +18,11 @@ void loop() {
 
   runEvery(500)
   {
-    /*
     Serial.print("pulse = ");
     Serial.print(pulse);
     Serial.print("\t");
     Serial.print("time = ");
     Serial.println(time);
-    */
-    Serial.print("t\n");
   }
 
 }

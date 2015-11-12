@@ -15,6 +15,7 @@ int main(int argc, const char * argv[]) {
     //testing all four motors on the car
     //collecting 25 data points for each motor to see variation in encoder readings
     
+    /*
     std::cout << "Testing Motor 1" << "\n";
     std::cout << "Connect battery to motor" << "\n";
     char should_be_a;
@@ -27,17 +28,14 @@ int main(int argc, const char * argv[]) {
     
     serialDataCommunicator sdCommunicator1("motor1_data");
     sdCommunicator1.start();
-
-    //currently not working correctly.  the serial stream only works for single characters.  it does not work when more than one character is printed from the arduino.  can try communicating between an input file w/o using the arduino to see if getline is working correctly.
     
-    /*
     std::cout << "Testing Motor 2" << "\n";
     std::cout << "Connect battery to motor" << "\n";
     char should_be_b;
     do
     {
         std::cout << "Press 'b' and enter when ready" << "\n";
-        std::cin >> should_be_a;
+        std::cin >> should_be_b;
     }
     while (should_be_b != 'b');
     
@@ -50,7 +48,7 @@ int main(int argc, const char * argv[]) {
     do
     {
         std::cout << "Press 'c' and enter when ready" << "\n";
-        std::cin >> should_be_a;
+        std::cin >> should_be_c;
     }
     while (should_be_c != 'c');
     
@@ -63,13 +61,13 @@ int main(int argc, const char * argv[]) {
     do
     {
         std::cout << "Press 'd' and enter when ready" << "\n";
-        std::cin >> should_be_a;
+        std::cin >> should_be_d;
     }
     while (should_be_d != 'd');
-    
-    serialDataCommunicator sdCommunicator4("motor4_data");
+    */
+    serialDataCommunicator sdCommunicator4("motor2_data_2");
     sdCommunicator4.start();
-     */
+    
     
     return 0;
 }
