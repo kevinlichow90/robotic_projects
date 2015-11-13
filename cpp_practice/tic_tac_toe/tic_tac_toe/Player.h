@@ -10,30 +10,42 @@
 #ifndef Player_h
 #define Player_h
 
+#include <iomanip>
+#include <limits>
+
 class Player
 {
 private:
-    char marker;
+    char cMarker;
+    int numPlayer;
     
 public:
-    void Player()
+    Player(int num)
     {
-        SetMarker()
+        numPlayer = num;
+        SetMarker();
     }
     
     void SetMarker()
     {
-        std::cout << "Enter marker type: " << "\n";
-        std::cin >> marker;
+        std::cout << "Player " << numPlayer << " enter a marker (single char): ";
         
+        std::cin >> cMarker;
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(),'\n'); //flush input stream after the first one
         //add some sort of assert or exception to make sure the marker is valid (not already being used by the other player)
+    }
+    
+    char GetMarker()
+    {
+        return cMarker;
     }
     
     void PlaceMarker()
     {
         
     }
-}
+};
 
 
 #endif
