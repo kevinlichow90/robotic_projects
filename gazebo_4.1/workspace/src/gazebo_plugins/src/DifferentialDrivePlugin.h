@@ -5,6 +5,9 @@
  *      Author: klchow
  */
 
+// Uses a unicycle model to convert 2d robot velocity commands into left and right wheel velocity commands
+// Contains a low level PID velocity controller
+
 #ifndef DIFFERENTIALDRIVEPLUGIN_H_
 #define DIFFERENTIALDRIVEPLUGIN_H_
 
@@ -12,6 +15,7 @@
 #include "gazebo/physics/physics.hh"
 #include "gazebo/transport/TransportTypes.hh"
 #include "gazebo/math/Pose.hh"
+#include "gazebo/math/Vector3.hh"
 #include "ros/ros.h"
 #include "ros/subscribe_options.h"
 #include "ros/callback_queue.h"
@@ -48,6 +52,12 @@ namespace gazebo
     	    double desired_velocity;
     	    double desired_angular_velocity;
 
+    	    double current_left_joint_velocity;
+    	    double current_right_joint_velocity;
+    	    math::Vector3 current_robot_linear_velocity;
+    	    math::Vector3 current_robot_angular_velocity;
+    	    double current_robot_angle;
+
     	    //boost::shared_ptr<ros::NodeHandle> rosNode;
     	    void CommandMessageCallback(const geometry_msgs::Twist::ConstPtr &msg);
     	    //void CommandMessageCallback(const std_msgs::Float32::ConstPtr &msg);
@@ -57,6 +67,7 @@ namespace gazebo
     	    DifferentialDrivePlugin();
             virtual void Load(physics::ModelPtr _model, sdf::ElementPtr _sdf);
             void Update();
+            void CompareLinearToAngularVelocity();
 
     };
 

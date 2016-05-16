@@ -109,6 +109,8 @@ int main(int argc, char **argv) {
     	}
     	std::cout << goal_ind << "\n";
     	for (int i = 0; i < goal_ind; i++) {
+    		inside_goal_threshold_count = 0;
+
     		goal_msg.x = goals[i][0];
     		goal_msg.y = goals[i][1];
 

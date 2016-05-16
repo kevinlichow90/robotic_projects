@@ -8,6 +8,10 @@
 #include "DifferentialDrivePlugin.h"
 #include <iostream>
 
+template <typename T> int sgn(T val) {
+    return (T(0) < val) - (val < T(0));
+}
+
 
 gazebo::DifferentialDrivePlugin::DifferentialDrivePlugin() {
     printf("Starting the DifferentialDrivePlugin\n");
@@ -77,6 +81,36 @@ void gazebo::DifferentialDrivePlugin::CommandMessageCallback(const geometry_msgs
 	//printf("Received command message\n");
 }
 
+void gazebo::DifferentialDrivePlugin::CompareLinearToAngularVelocity() {
+	current_left_joint_velocity = this->leftJoint->GetVelocity(0);
+	current_right_joint_velocity = this->rightJoint->GetVelocity(0);
+	current_robot_linear_velocity = this->model->GetWorldLinearVel();
+	current_robot_angular_velocity = this->model->GetWorldAngularVel();
+
+	// Things to check:
+	//   - Is the joint velocity the angular velocity or linear velocity?  Looks like angular velocity
+	//   - Do the joint velocities match with the robot's velocity?  Linear velocity is very close.  Angular velocity is off by a bit.  Could be the wheel separation distance?  Maybe slip?
+	// assuming joint velocity is angular velocity:
+	double predicted_linear_velocity_1 = (wheel_radius/2)*(current_left_joint_velocity+current_right_joint_velocity)*cos(current_robot_angle);
+	double predicted_angular_velocity_1 = (wheel_radius/wheel_separation_distance)*(current_right_joint_velocity-current_left_joint_velocity);
+	// assuming joint velocity is linear velocity:
+	double 	predicted_linear_velocity_2 = (1./2.)*(current_left_joint_velocity+current_right_joint_velocity)*cos(current_robot_angle);
+	double predicted_angular_velocity_2 = (1./wheel_separation_distance)*(current_right_joint_velocity-current_left_joint_velocity);
+	// comparison:
+	std::cout << "predicted_linear_velocity_1: " << predicted_linear_velocity_1;
+	std::cout << "predicted_linear_velocity_2: " << predicted_linear_velocity_2;
+	std::cout << "current_linear_velocity: " << current_robot_linear_velocity << "\n";
+	std::cout << "predicted_angular_velocity_1: " << predicted_angular_velocity_1;
+	std::cout << "predicted_angular_velocity_2: " << predicted_angular_velocity_2;
+	std::cout << "current_angular_velocity: " << current_robot_angular_velocity << "\n";
+
+	//   - What are the forces and accelerations like?
+
+	//   - Is the robot slipping?
+	// v = r*w
+
+}
+
 void gazebo::DifferentialDrivePlugin::Update() {
 
 	double desired_left_wheel_velocity = (2*desired_velocity-this->desired_angular_velocity*wheel_separation_distance)/(2*wheel_radius);
@@ -113,6 +147,18 @@ void gazebo::DifferentialDrivePlugin::Update() {
 	msg.orientation.w = current_pose.rot.w;
 	pose_pub.publish(msg);
 
+	// TEMPORARY*****************
+	// just used for comparing linear and angular velocity
+	//convert quaternion to angle axis and then to 2D angle
+
+	double axis[3] = {current_pose.rot.x/sqrt(1-current_pose.rot.w*current_pose.rot.w),
+			           current_pose.rot.y/sqrt(1-current_pose.rot.w*current_pose.rot.w),
+			           current_pose.rot.z/sqrt(1-current_pose.rot.w*current_pose.rot.w)};
+	double angle = 2*acos(current_pose.rot.w)*sgn(axis[2]); // negative because that's how the signs turn out
+	current_robot_angle = angle;
+
 	ros::spinOnce();
+
+	//CompareLinearToAngularVelocity();
 }
 
