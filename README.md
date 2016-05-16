@@ -1,7 +1,10 @@
 # robotic_projects
 
 # Current projects include:
-# - control of simple robotic arm
+# - controlling two wheeled robot
+# - quadcopter (simulated/real) control
+
+# Future projects include:
+# - control of different robotic arms
 # - 4 wheel skid steered car
-# - quadcopter
 # - smart vegetable garden/compost/aquaponics
