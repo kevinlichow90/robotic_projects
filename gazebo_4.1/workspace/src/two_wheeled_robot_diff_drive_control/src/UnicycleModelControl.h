@@ -48,9 +48,9 @@ public:
 
 	void SendControllerCommand();
 
-	geometry_msgs::Twist CalculateWheelVelocities();
+	geometry_msgs::Twist CalculateTwistCommand();
 
-	void PublishWheelVelocities(geometry_msgs::Twist twist_command);
+	void PublishTwistCommand(geometry_msgs::Twist twist_command);
 
 	void PublishCurrentRobotStatus();
 

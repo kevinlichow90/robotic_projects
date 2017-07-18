@@ -93,9 +93,9 @@ bool UnicycleModelControl::ReachedGoal() {
 
 void UnicycleModelControl::SendControllerCommand() {
 	//make sure the current pose is locked somehow?
-	geometry_msgs::Twist twist_command = UnicycleModelControl::CalculateWheelVelocities();
+	geometry_msgs::Twist twist_command = UnicycleModelControl::CalculateTwistCommand();
 	m_twist_command = twist_command; // assign a member variable so that PublishCurrentRobotStatus can see the current twist command
-	UnicycleModelControl::PublishWheelVelocities(twist_command);
+	UnicycleModelControl::PublishTwistCommand(twist_command);
 }
 
 // this should always be called after the member variables have already been set at least once
@@ -153,7 +153,7 @@ void UnicycleModelControl::UpdateCurrentPoseCallback(const geometry_msgs::Pose::
     std::cout << "Got Pose message: " << m_current_pose.x << ", " << m_current_pose.y << ", " << m_current_pose.theta << "\n";
 }
 
-geometry_msgs::Twist UnicycleModelControl::CalculateWheelVelocities() {
+geometry_msgs::Twist UnicycleModelControl::CalculateTwistCommand() {
 
 
 	// try scaling the orientation control based on distance to goal (normalized by initial distance error)
@@ -210,7 +210,7 @@ geometry_msgs::Twist UnicycleModelControl::CalculateWheelVelocities() {
 	return twist_command;
 }
 
-void UnicycleModelControl::PublishWheelVelocities(geometry_msgs::Twist twist_command) {
+void UnicycleModelControl::PublishTwistCommand(geometry_msgs::Twist twist_command) {
 	m_controller_pub.publish(twist_command);
 }
 
