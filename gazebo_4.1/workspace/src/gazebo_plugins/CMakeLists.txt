@@ -15,3 +15,7 @@ list(APPEND CMAKE_CXX_FLAGS "${GAZEBO_CXX_FLAGS}")
 
 add_library(DifferentialDrivePlugin SHARED src/DifferentialDrivePlugin.cpp)
 target_link_libraries(DifferentialDrivePlugin ${GAZEBO_LIBRARIES} ${roscpp_LIBRARIES})
+add_library(SpheroDrivePlugin SHARED src/SpheroDrivePlugin.cpp)
+target_link_libraries(SpheroDrivePlugin ${GAZEBO_LIBRARIES} ${roscpp_LIBRARIES})
+
+install(TARGETS DifferentialDrivePlugin SpheroDrivePlugin DESTINATION ~/catkin_ws/src/gazebo_plugins/lib)
