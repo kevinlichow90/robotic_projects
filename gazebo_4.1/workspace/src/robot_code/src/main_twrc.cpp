@@ -1,6 +1,6 @@
 
 #include "ros/ros.h"
-#include "sphero_controller.h"
+#include "two_wheeled_robot_controller.h"
 #include <fstream>
 
 // split a string at any spaces, commas, endlines, EOF
@@ -32,17 +32,16 @@ int main(int argc, char **argv) {
     controller_params.p_gain_position = 1.;
     controller_params.i_gain_position = 0.01;
     controller_params.d_gain_position = 0.1;
-    controller_params.p_gain_cross_track = 1.;
+    controller_params.p_gain_orientation = 1;
+    controller_params.p_gain_cross_track = 0.1;
     controller_params.i_gain_cross_track = 0.01;
-    controller_params.d_gain_cross_track = 0.1;
-    controller_params.desired_max_velocity = 1.;
+    controller_params.d_gain_cross_track = 10.;
+    controller_params.desired_max_velocity = 0.3;
     controller_params.max_waypoint_step_size = 0.1;
     controller_params.look_ahead_distance = 0.5;
     controller_params.goal_threshold = 0.001;
 
-    std::string node_name = "sphero";
-  
-    SpheroController c = SpheroController(controller_params, node_name);
+    TwoWheeledRobotController c = TwoWheeledRobotController(controller_params);
 
     geometry_msgs::Pose2D initial_pose = c.GetCurrentPose();
 
@@ -100,8 +99,8 @@ int main(int argc, char **argv) {
         c.PublishTwistCommand();
         geometry_msgs::Twist twist_command = c.GetTwistCommand();
         std::cout << "Twist Command" << "\n";
-        std::cout << "x: " << twist_command.linear.x << "\n";
-        std::cout << "y: " << twist_command.linear.y << "\n";
+        std::cout << "linear: " << twist_command.linear.x << "\n";
+        std::cout << "angular: " << twist_command.angular.z << "\n";
 
         ros::spinOnce();
 

@@ -212,19 +212,6 @@ void SpheroController::FindNearestWaypoint() {
     this->min_distance_ind = min_distance_ind;
 }
 
-void SpheroController::CalculateDesiredVelocity() {
-    // calculate velocity error based on distance from beginning and distance from goal
-    // possibly slow down at turns?
-    desired_velocity_x = cp.desired_max_velocity;
-    desired_velocity_y = cp.desired_max_velocity;
-}
-
-void SpheroController::CalculateVelocityError() {
-    // subtract desired velocity from current velocity
-    velocity_error_x = desired_velocity_x-current_twist.linear.x;
-    velocity_error_y = desired_velocity_y-current_twist.linear.y;
-    
-}
 
 void SpheroController::CalculatePositionError() {
     // subtract desired velocity from current velocity

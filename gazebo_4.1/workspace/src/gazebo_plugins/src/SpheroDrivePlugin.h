@@ -12,14 +12,12 @@
 
 #include "gazebo/gazebo.hh"
 #include "gazebo/physics/physics.hh"
-#include "gazebo/transport/TransportTypes.hh"
 #include "gazebo/math/Pose.hh"
 #include "gazebo/math/Vector3.hh"
 #include "ros/ros.h"
 #include "geometry_msgs/Twist.h"
 #include "geometry_msgs/Pose.h"
 #include <boost/bind.hpp>
-#include <memory>
 
 namespace gazebo
 {

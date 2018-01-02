@@ -158,6 +158,8 @@ include_directories(
 # Build controller
 add_executable(main src/main.cpp src/sphero_controller.cpp src/sphero_controller.h)
 target_link_libraries(main ${catkin_LIBRARIES})
+add_executable(main_twrc src/main_twrc.cpp src/two_wheeled_robot_controller.cpp src/two_wheeled_robot_controller.h)
+target_link_libraries(main_twrc ${catkin_LIBRARIES})
 
 
 #############
@@ -168,6 +170,7 @@ target_link_libraries(main ${catkin_LIBRARIES})
 # See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
 
 install(TARGETS main DESTINATION ~/catkin_ws/src/robot_code/bin)
+install(TARGETS main_twrc DESTINATION ~/catkin_ws/src/robot_code/bin)
 
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination

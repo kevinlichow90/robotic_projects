@@ -19,8 +19,8 @@ gazebo::DifferentialDrivePlugin::DifferentialDrivePlugin() {
     // Initialize model variables
     wheel_separation_distance = 1.0;
     wheel_radius = 0.5;
-    this->desired_velocity = 0;
-    this->desired_angular_velocity = 0;
+    desired_velocity = 0;
+    desired_angular_velocity = 0;
 }
 
 void gazebo::DifferentialDrivePlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf) {
@@ -31,13 +31,10 @@ void gazebo::DifferentialDrivePlugin::Load(physics::ModelPtr _model, sdf::Elemen
 		ros::init(argc, NULL, name, ros::init_options::NoSigintHandler);
 	}
 
-	//this->robotNamespace = _sdf->GetElement("robotNamespace")->GetValueString();
 	this->rosnode_ = new ros::NodeHandle("gazebo/differential_drive_plugin_node");
 	std::cout << ros::this_node::getName() << "\n";
-    pose_pub = this->rosnode_->advertise<geometry_msgs::Pose>("differential_drive_pose",1000);
-    //this->rosnode_->subscribe<geometry_msgs::Twist>("/differential_drive_velocity_command", 1000, &DifferentialDrivePlugin::CommandMessageCallback, this);
-	//ros::NodeHandle rosnode_;
-	//this->rosNode.reset(new ros::NodeHandle("test"));
+        pose_pub = this->rosnode_->advertise<geometry_msgs::Pose>("differential_drive_pose",1000);
+        twist_pub = this->rosnode_->advertise<geometry_msgs::Twist>("differential_drive_twist",1000);
 
 	std::cout << this->rosnode_->getNamespace() << "\n";
 	ros::V_string ros_string;
@@ -46,10 +43,7 @@ void gazebo::DifferentialDrivePlugin::Load(physics::ModelPtr _model, sdf::Elemen
 		std::cout << ros_string[i] << "\n";
 	}
 
-	//ros::SubscribeOptions so = ros::SubscribeOptions::create<geometry_msgs::Twist>("/gazebo/differential_drive_plugin_node/differential_drive_velocity_command", 1000, boost::bind(&DifferentialDrivePlugin::CommandMessageCallback, this, _1), ros::VoidPtr(), this->rosnode_->getCallbackQueue());
-	//this->rosnode_->subscribe(so);
 	sub = this->rosnode_->subscribe<geometry_msgs::Twist>("differential_drive_velocity_command", 1000, &gazebo::DifferentialDrivePlugin::CommandMessageCallback, this);
-	//this->rosNode->subscribe<geometry_msgs::Twist>("/gazebo/differential_drive_velocity_comand", 1000, &DifferentialDrivePlugin::CommandMessageCallback, this);
 
 	ros::V_string ros_string2;
 	ros::this_node::getSubscribedTopics(ros_string2);
@@ -58,10 +52,6 @@ void gazebo::DifferentialDrivePlugin::Load(physics::ModelPtr _model, sdf::Elemen
 	}
 
 	this->model = _model;
-
-	//this->node = transport::NodePtr(new gazebo::transport::Node());
-	//this->node->Init(this->model->GetWorld()->GetName());
-    //this->commandSub = this->node->Subscribe(std::string("~/")+this->model->GetName()+"/vel_cmd", &DifferentialDrivePlugin::CommandMessageCallback, this);
 
 	std::cout << "The DifferentialDrivePlugin is attached to model [" << model->GetName() << "]\n";
 
@@ -72,12 +62,10 @@ void gazebo::DifferentialDrivePlugin::Load(physics::ModelPtr _model, sdf::Elemen
 }
 
 void gazebo::DifferentialDrivePlugin::CommandMessageCallback(const geometry_msgs::Twist::ConstPtr &msg) {
-//void gazebo::DifferentialDrivePlugin::CommandMessageCallback(const std_msgs::Float32::ConstPtr &msg) {
-	//void gazebo::DifferentialDrivePlugin::CommandMessageCallback(ConstPosePtr &msg) {
     // body fixed axes
 	//std::cout << "Received command message" << "\n";
-	this->desired_velocity = msg->linear.x;
-	this->desired_angular_velocity = msg->angular.z;
+	desired_velocity = msg->linear.x;
+	desired_angular_velocity = msg->angular.z;
 	//printf("Received command message\n");
 }
 
@@ -114,7 +102,7 @@ void gazebo::DifferentialDrivePlugin::CompareLinearToAngularVelocity() {
 void gazebo::DifferentialDrivePlugin::Update() {
 
 	double desired_left_wheel_velocity = (2*desired_velocity-this->desired_angular_velocity*wheel_separation_distance)/(2*wheel_radius);
-    double desired_right_wheel_velocity = (2*desired_velocity+this->desired_angular_velocity*wheel_separation_distance)/(2*wheel_radius);
+        double desired_right_wheel_velocity = (2*desired_velocity+this->desired_angular_velocity*wheel_separation_distance)/(2*wheel_radius);
 	//double desired_left_wheel_velocity = 0;
 	//double desired_right_wheel_velocity = 0;
 
@@ -124,28 +112,39 @@ void gazebo::DifferentialDrivePlugin::Update() {
 	//std::cout << this->rightJoint->GetName() << "\n";
 	//std::cout << "Setting the left wheel velocity to " << desired_left_wheel_velocity << " and the right wheel velocity to " << desired_right_wheel_velocity << "\n";
 
-	this->pid = gazebo::common::PID(10,0,0);
+        // PID wheel control
+	//this->pid = gazebo::common::PID(10,0,0);
+        //this->model->GetJointController()->SetVelocityPID(this->leftJoint->GetScopedName(), this->pid);
+	//this->model->GetJointController()->SetVelocityPID(this->rightJoint->GetScopedName(), this->pid);
+	//this->model->GetJointController()->SetVelocityTarget(this->leftJoint->GetScopedName(), desired_left_wheel_velocity);
+	//this->model->GetJointController()->SetVelocityTarget(this->rightJoint->GetScopedName(), desired_right_wheel_velocity);
 
-    this->model->GetJointController()->SetVelocityPID(this->leftJoint->GetScopedName(), this->pid);
-	this->model->GetJointController()->SetVelocityPID(this->rightJoint->GetScopedName(), this->pid);
+        // direct wheel velocity specification
+        leftJoint->SetVelocity(0,desired_left_wheel_velocity);
+        rightJoint->SetVelocity(0,desired_right_wheel_velocity);
 
-	this->model->GetJointController()->SetVelocityTarget(this->leftJoint->GetScopedName(), desired_left_wheel_velocity);
-	this->model->GetJointController()->SetVelocityTarget(this->rightJoint->GetScopedName(), desired_right_wheel_velocity);
-
-	//std::cout << this->leftJoint->GetVelocity(0) << "\n";
-	//std::cout << this->rightJoint->GetVelocity(0) << "\n";
-
-	geometry_msgs::Pose msg;
+	geometry_msgs::Pose pose_msg;
 	this->horizontal_connector_link = this->model->GetLink("base_footprint");
 	current_pose = this->horizontal_connector_link->GetWorldCoGPose();
-	msg.position.x = current_pose.pos.x;
-	msg.position.y = current_pose.pos.y;
-	msg.position.z = current_pose.pos.z;
-	msg.orientation.x = current_pose.rot.x;
-	msg.orientation.y = current_pose.rot.y;
-	msg.orientation.z = current_pose.rot.z;
-	msg.orientation.w = current_pose.rot.w;
-	pose_pub.publish(msg);
+	pose_msg.position.x = current_pose.pos.x;
+	pose_msg.position.y = current_pose.pos.y;
+	pose_msg.position.z = current_pose.pos.z;
+	pose_msg.orientation.x = current_pose.rot.x;
+	pose_msg.orientation.y = current_pose.rot.y;
+	pose_msg.orientation.z = current_pose.rot.z;
+	pose_msg.orientation.w = current_pose.rot.w;
+	pose_pub.publish(pose_msg);
+
+        geometry_msgs::Twist twist_msg;
+        math::Vector3 current_linear_vel = horizontal_connector_link->GetWorldCoGLinearVel();
+        math::Vector3 current_angular_vel = horizontal_connector_link->GetWorldAngularVel();
+        twist_msg.linear.x = current_linear_vel.x;
+        twist_msg.linear.y = current_linear_vel.y;
+        twist_msg.linear.z = current_linear_vel.z;
+        twist_msg.angular.x = current_angular_vel.x;
+        twist_msg.angular.y = current_angular_vel.y;
+        twist_msg.angular.z = current_angular_vel.z;
+        twist_pub.publish(twist_msg);
 
 	// TEMPORARY*****************
 	// just used for comparing linear and angular velocity
