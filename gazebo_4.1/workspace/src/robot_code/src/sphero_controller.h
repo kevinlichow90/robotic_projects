@@ -22,10 +22,6 @@
 #include <cmath>
 #include <Eigen/Dense>
 
-template <typename T> int sgn(T val) {
-    return (T(0) < val) - (val < T(0));
-}
-
 struct ControllerParams {
         double p_gain_position;
         double i_gain_position;
@@ -52,8 +48,6 @@ private:
         geometry_msgs::Pose2D current_pose;
         geometry_msgs::Twist current_twist;
         ControllerParams cp;
-        double desired_velocity_x;
-        double desired_velocity_y;
         double position_error_x;
         double position_error_y;
         double total_position_error_x;
@@ -64,14 +58,14 @@ private:
         double deriv_position_error_y;
         double velocity_error_x;
         double velocity_error_y;
-        double vel_x_command;
-        double vel_y_command;
-        double vel_x_ff;
-        double vel_y_ff;
+        double velocity_command_x;
+        double velocity_command_y;
+        double desired_velocity_x;
+        double desired_velocity_y;
         double cross_track_error_x;
         double cross_track_error_y;
-        int prev_min_distance_ind;
-        int min_distance_ind;
+        int prev_nearest_waypoint_ind;
+        int nearest_waypoint_ind;
         double prev_cross_track_error_x;
         double prev_cross_track_error_y;
         double deriv_cross_track_error_x;
@@ -112,6 +106,8 @@ public:
         void PublishTwistCommand();
 
         void PublishCurrentRobotStatus();
+
+        void UpdateControllerCalculations();
 
         bool ReachedGoal();
 

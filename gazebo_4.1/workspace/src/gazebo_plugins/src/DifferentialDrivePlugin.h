@@ -31,6 +31,7 @@ namespace gazebo
     	    event::ConnectionPtr updateConnection;
     	    //common::PID pid;
     	    ros::NodeHandle* rosnode_;
+    	    ros::NodeHandle* private_nh;
     	    ros::Publisher pose_pub;
     	    ros::Publisher twist_pub;
     	    ros::Subscriber sub;

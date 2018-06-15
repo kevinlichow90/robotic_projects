@@ -94,13 +94,18 @@ int main(int argc, char **argv) {
    
     ros::Rate loop_rate(10);
 
-    while (!c.ReachedGoal()) {
-        c.CalculateTwistCommand();
-        c.PublishTwistCommand();
+    int num_reached_goal;    
+    while (num_reached_goal < 10) {
+        c.UpdateControllerCalculations();
         geometry_msgs::Twist twist_command = c.GetTwistCommand();
         std::cout << "Twist Command" << "\n";
         std::cout << "linear: " << twist_command.linear.x << "\n";
         std::cout << "angular: " << twist_command.angular.z << "\n";
+        if (c.ReachedGoal()) {
+            num_reached_goal++;
+        } else {
+            num_reached_goal = 0;
+        }
 
         ros::spinOnce();
 

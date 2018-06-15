@@ -17,6 +17,7 @@ gazebo::DifferentialDrivePlugin::DifferentialDrivePlugin() {
     printf("Starting the DifferentialDrivePlugin\n");
 
     // Initialize model variables
+    // ***these should be on the parameter server
     wheel_separation_distance = 1.0;
     wheel_radius = 0.5;
     desired_velocity = 0;
@@ -31,7 +32,9 @@ void gazebo::DifferentialDrivePlugin::Load(physics::ModelPtr _model, sdf::Elemen
 		ros::init(argc, NULL, name, ros::init_options::NoSigintHandler);
 	}
 
-	this->rosnode_ = new ros::NodeHandle("gazebo/differential_drive_plugin_node");
+        //***should be private nodehandle so that all topics are published with robot name pre-appended
+        this->rosnode_ = new ros::NodeHandle(_model->GetName());
+	//this->rosnode_ =  new ros::NodeHandle(*private_nh,"gazebo/differential_drive_plugin_node");
 	std::cout << ros::this_node::getName() << "\n";
         pose_pub = this->rosnode_->advertise<geometry_msgs::Pose>("differential_drive_pose",1000);
         twist_pub = this->rosnode_->advertise<geometry_msgs::Twist>("differential_drive_twist",1000);
@@ -124,7 +127,7 @@ void gazebo::DifferentialDrivePlugin::Update() {
         rightJoint->SetVelocity(0,desired_right_wheel_velocity);
 
 	geometry_msgs::Pose pose_msg;
-	this->horizontal_connector_link = this->model->GetLink("base_footprint");
+	this->horizontal_connector_link = this->model->GetLink("base_link");
 	current_pose = this->horizontal_connector_link->GetWorldCoGPose();
 	pose_msg.position.x = current_pose.pos.x;
 	pose_msg.position.y = current_pose.pos.y;

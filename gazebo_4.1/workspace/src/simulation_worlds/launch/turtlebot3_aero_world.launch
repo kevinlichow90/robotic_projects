@@ -1,0 +1,21 @@
+<launch>
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="use_sim_time" value="true"/>
+    <arg name="debug" value="false"/>
+  </include>
+
+  <group ns="robot_1">
+    <include file="$(find simulation_worlds)/launch/one_turtlebot3.launch">
+      <arg name="robot_name" value="robot_1" />
+      <arg name="init_pose" value="-x 0 -y 0 -z 0"/>
+    </include>
+  </group>
+
+  <group ns="robot_2">
+    <include file="$(find simulation_worlds)/launch/one_turtlebot3.launch">
+      <arg name="robot_name" value="robot_2" />
+      <arg name="init_pose" value="-x 1 -y 0 -z 0"/>
+    </include>
+  </group>
+
+</launch>

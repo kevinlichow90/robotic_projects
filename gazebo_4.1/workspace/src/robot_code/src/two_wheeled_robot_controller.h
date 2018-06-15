@@ -25,16 +25,6 @@
 
 #define PI 3.14159265358979323846  /* pi */
 
-template <typename T> int sgn(T val) {
-    return (T(0) < val) - (val < T(0));
-}
-
-inline double wrapAngle( double angle )
-{
-    double twoPi = 2.0 * PI;
-    return angle - twoPi * floor( angle / twoPi );
-}
-
 struct ControllerParams {
         double p_gain_position;
         double i_gain_position;
@@ -120,6 +110,8 @@ public:
         void PublishTwistCommand();
 
         void PublishCurrentRobotStatus();
+ 
+        void UpdateControllerCalculations();
 
         bool ReachedGoal();
 

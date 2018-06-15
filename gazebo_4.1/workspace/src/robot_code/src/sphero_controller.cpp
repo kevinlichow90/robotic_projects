@@ -7,7 +7,11 @@
 
 #include "sphero_controller.h"
 
-std::vector<std::string> split_string(const std::string& str, const std::string& delim)
+template <typename T> int sgn(T val) {
+    return (T(0) < val) - (val < T(0));
+}
+
+std::vector<std::string> split_string_delim(const std::string& str, const std::string& delim)
 {
     std::vector<std::string> tokens;
     size_t prev = 0, pos = 0;
@@ -23,6 +27,17 @@ std::vector<std::string> split_string(const std::string& str, const std::string&
     return tokens;
 }
 
+double calculate_total_path_length(std::vector<std::vector<double> >& v) {
+// find the diff of each index of the vectors and find the norm of the difference
+    double path_length = 0;
+    std::vector<double> diff_vector_single;
+    for (int iii = 0; iii < (v.size()-1); iii++) {
+         path_length += sqrt(pow(v[iii+1][0]-v[iii][0],2)+pow(v[iii+1][1]-v[iii][1],2));
+    }
+    return path_length;
+} 
+
+
 SpheroController::SpheroController(ControllerParams controller_params, std::string node_name) : cp(controller_params) {
     if (!ros::isInitialized()){
             int argc = 0;
@@ -37,10 +52,10 @@ SpheroController::SpheroController(ControllerParams controller_params, std::stri
     cross_track_error_y = 0;
     total_cross_track_error_y = 0;
     total_cross_track_error_y = 0;
-    min_distance_ind = 0;
-    prev_min_distance_ind = 0;
+    nearest_waypoint_ind = 0;
+    prev_nearest_waypoint_ind = 0;
 
-    std::vector<std::string> node_name_split_vec = split_string(node_name,"_");
+    std::vector<std::string> node_name_split_vec = split_string_delim(node_name,"_");
 
     controller_pub = nh.advertise<geometry_msgs::Twist>("/gazebo/"+node_name_split_vec[0]+"_drive_plugin_node/"+node_name_split_vec[0]+"_drive_velocity_command", 1000);
     robot_status_pub = nh.advertise<robot_code::RobotStatus>("/current_robot_status", 1000);
@@ -181,7 +196,8 @@ void SpheroController::GenerateVelocityWaypointSpline() {
 void SpheroController::FindNearestWaypoint() {
     // find nearest waypoint to current position
     int min_distance_ind = 0;
-    double min_distance = 1000; // change to be slightly larger than full range 
+    double current_norm_distance = sqrt(pow(current_pose.x,2)+pow(current_pose.y,2));
+    double min_distance = current_norm_distance+calculate_total_path_length(waypoints); // change to be slightly larger than full range 
     int look_ahead_inds = int (cp.look_ahead_distance/cp.max_waypoint_step_size);
     int start_ind, end_ind;
     /*
@@ -193,30 +209,29 @@ void SpheroController::FindNearestWaypoint() {
         start_ind = prev_min_distance_ind-look_ahead_inds;
     }
     */
-    if (prev_min_distance_ind == (waypoints.size()-1)) {
+    if (prev_nearest_waypoint_ind == (waypoints.size()-1)) {
         end_ind = waypoints.size()-1;
     }
-    else if (prev_min_distance_ind+look_ahead_inds > (waypoints.size()-1)) {
+    else if (prev_nearest_waypoint_ind+look_ahead_inds > (waypoints.size()-1)) {
         end_ind = waypoints.size()-1;
     } else {
-        end_ind = prev_min_distance_ind+look_ahead_inds;
+        end_ind = prev_nearest_waypoint_ind+look_ahead_inds;
     }
-    for (int iii = prev_min_distance_ind; iii <= end_ind; iii++) {
+    for (int iii = prev_nearest_waypoint_ind; iii <= end_ind; iii++) {
         double distance = sqrt(pow(current_pose.x-waypoints[iii][0],2)+pow(current_pose.y-waypoints[iii][1],2));
         if (distance < min_distance) {
             min_distance_ind = iii;
             min_distance = distance;
         }
     }
-    this->prev_min_distance_ind = this->min_distance_ind;
-    this->min_distance_ind = min_distance_ind;
+    this->prev_nearest_waypoint_ind = this->nearest_waypoint_ind;
+    this->nearest_waypoint_ind = min_distance_ind;
 }
 
 
 void SpheroController::CalculatePositionError() {
     // subtract desired velocity from current velocity
-    FindNearestWaypoint();
-    std::vector<double> nearest_waypoint = waypoints[min_distance_ind];
+    std::vector<double> nearest_waypoint = waypoints[nearest_waypoint_ind];
     prev_position_error_x = position_error_x;
     prev_position_error_y = position_error_y;
     position_error_x = nearest_waypoint[0]-current_pose.x; 
@@ -226,13 +241,12 @@ void SpheroController::CalculatePositionError() {
     deriv_position_error_x = position_error_x-prev_position_error_x;
     deriv_position_error_y = position_error_y-prev_position_error_y;
 
-
     // calculate cross track error
     // determine orthogonal unit vector btwn current position and velocity vector
     // dot proudct btwn orthogonal unit vector and current position error to find cross track error
     std::vector<double> unit_vel;
-    unit_vel.push_back(velocity_waypoints[min_distance_ind][0]);
-    unit_vel.push_back(velocity_waypoints[min_distance_ind][1]);
+    unit_vel.push_back(velocity_waypoints[nearest_waypoint_ind][0]);
+    unit_vel.push_back(velocity_waypoints[nearest_waypoint_ind][1]);
     double norm_vel = sqrt(pow(unit_vel[0],2)+pow(unit_vel[1],2));
     //***** if statement to check if norm_vel is 0
     if (norm_vel==0) {
@@ -270,7 +284,6 @@ void SpheroController::CalculatePositionError() {
 
 void SpheroController::CalculateFeedforwardCommands() {
     // should eventually have a velocity waypoint vector also 
-    FindNearestWaypoint();
     /*
     if (nearest_waypoint == waypoints[0]) {
         vel_x_ff = cp.desired_max_velocity/2;
@@ -283,8 +296,8 @@ void SpheroController::CalculateFeedforwardCommands() {
         vel_y_ff = cp.desired_max_velocity;
     }
     */
-    vel_x_ff = velocity_waypoints[min_distance_ind][0]; 
-    vel_y_ff = velocity_waypoints[min_distance_ind][1]; 
+    desired_velocity_x = velocity_waypoints[nearest_waypoint_ind][0]; 
+    desired_velocity_y = velocity_waypoints[nearest_waypoint_ind][1]; 
 }
 
 void SpheroController::CalculateTwistCommand() {
@@ -295,24 +308,21 @@ void SpheroController::CalculateTwistCommand() {
         // linear velocity command
             // feedforward velocity based on trajectory
             // PID control law for velocity error
-    CalculatePositionError();
-    CalculateFeedforwardCommands();
 
-    FindNearestWaypoint();
-    std::cout << "nearest waypoint: " << waypoints[min_distance_ind][0] << "\t" << waypoints[min_distance_ind][1] << "\n";
+    std::cout << "nearest waypoint: " << waypoints[nearest_waypoint_ind][0] << "\t" << waypoints[nearest_waypoint_ind][1] << "\n";
 
-    if (min_distance_ind == (waypoints.size()-1)) {
-        vel_x_command = cp.p_gain_position*(position_error_x)+cp.d_gain_position*(deriv_position_error_x);//+cp.i_gain_position*(total_position_error_x);
-        vel_y_command = cp.p_gain_position*(position_error_y)+cp.d_gain_position*(deriv_position_error_y);//+cp.i_gain_position*(total_position_error_y);
+    if (nearest_waypoint_ind == (waypoints.size()-1)) {
+        velocity_command_x = cp.p_gain_position*(position_error_x)+cp.d_gain_position*(deriv_position_error_x);//+cp.i_gain_position*(total_position_error_x);
+        velocity_command_y = cp.p_gain_position*(position_error_y)+cp.d_gain_position*(deriv_position_error_y);//+cp.i_gain_position*(total_position_error_y);
     } else {
-        vel_x_command = vel_x_ff+cp.p_gain_cross_track*(cross_track_error_x)+cp.d_gain_cross_track*(deriv_cross_track_error_x)+cp.i_gain_cross_track*(total_cross_track_error_x);
-        vel_y_command = vel_y_ff+cp.p_gain_cross_track*(cross_track_error_y)+cp.d_gain_cross_track*(deriv_cross_track_error_y)+cp.i_gain_cross_track*(total_cross_track_error_y);
+        velocity_command_x = desired_velocity_x+cp.p_gain_cross_track*(cross_track_error_x)+cp.d_gain_cross_track*(deriv_cross_track_error_x)+cp.i_gain_cross_track*(total_cross_track_error_x);
+        velocity_command_y = desired_velocity_y+cp.p_gain_cross_track*(cross_track_error_y)+cp.d_gain_cross_track*(deriv_cross_track_error_y)+cp.i_gain_cross_track*(total_cross_track_error_y);
         std::cout << cp.p_gain_cross_track << "\t" << cp.d_gain_cross_track << "\n";
         std::cout << cp.i_gain_cross_track << "\t" << total_cross_track_error_x << "\t" << total_cross_track_error_y << "\n";
         std::cout << "total cross track command: " << cp.i_gain_cross_track*(total_cross_track_error_x) << "\t" << cp.i_gain_cross_track*(total_cross_track_error_y) << "\n";
     }
-    twist_command.linear.x = vel_x_command;
-    twist_command.linear.y = vel_y_command;
+    twist_command.linear.x = velocity_command_x;
+    twist_command.linear.y = velocity_command_y;
     
     // time based trajectory following vs position based
     // position based: chrome-extension://oemmndcbldboiebfnladdacbdfmadadm/https://www.ri.cmu.edu/pub_files/pub4/singh_sanjiv_1989_1/singh_sanjiv_1989_1.pdf
@@ -341,18 +351,23 @@ void SpheroController::PublishCurrentRobotStatus() {
 
 }
 
-bool SpheroController::ReachedGoal() {
+void SpheroController::UpdateControllerCalculations() {
     FindNearestWaypoint();
-    if (min_distance_ind == (waypoints.size()-1)) {
+    CalculatePositionError();
+    CalculateFeedforwardCommands();
+    CalculateTwistCommand();
+    ReachedGoal();
+    PublishTwistCommand();
+}
+
+bool SpheroController::ReachedGoal() {
+    if (nearest_waypoint_ind == (waypoints.size()-1)) {
         double distance_to_goal = sqrt(pow(current_pose.x-waypoints[waypoints.size()-1][0],2)+pow(current_pose.y-waypoints[waypoints.size()-1][1],2));
         std::cout << "distance_to_goal: " << distance_to_goal << "\n";
         if (distance_to_goal<cp.goal_threshold) {
            // publish velocity to zero
-           for (int iii = 0; iii < 10; iii++) {
-               twist_command.linear.x = 0;
-               twist_command.linear.y = 0;
-               PublishTwistCommand();
-           }
+           twist_command.linear.x = 0;
+           twist_command.linear.y = 0;
            std::cout << "******************************COMPLETED****************************" << "\n";
            return 1;
         }

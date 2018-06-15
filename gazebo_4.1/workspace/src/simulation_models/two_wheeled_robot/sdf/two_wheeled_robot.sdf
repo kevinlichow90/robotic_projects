@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <sdf version='1.4'>
   <model name='two_wheeled_robot'>
-    <link name='base_footprint'>
+    <link name='base_link'>
       <pose>0 0 0 0 0 0</pose>
       <!--<inertial>
         <inertia>
@@ -175,7 +175,7 @@
     </link>
     <joint name='base_joint' type='revolute'>
       <child>horizontal_connector</child>
-      <parent>base_footprint</parent>
+      <parent>base_link</parent>
       <axis>
         <limit>
           <lower>0</lower>

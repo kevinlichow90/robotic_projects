@@ -1,0 +1,15 @@
+<launch>
+  <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <!--<arg name="world_name" value="$(find simulation_worlds)/worlds/unicycle_robot.world"/>-->
+    <arg name="verbose" value="true"/>
+    <!-- more default parameters can be changed here -->
+  </include>
+  <!-- push robot_description to factory and spawn robot in gazebo -->
+  <node name="spawn_robot" pkg="gazebo_ros" type="spawn_model"
+      args="-file $(find simulation_models)/pioneer2dx/model.sdf
+         -sdf
+         -model robot1"
+      respawn="false" output="screen"/>
+
+</launch>

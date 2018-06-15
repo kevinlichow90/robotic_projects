@@ -7,6 +7,16 @@
 
 #include "two_wheeled_robot_controller.h"
 
+template <typename T> int sgn(T val) {
+    return (T(0) < val) - (val < T(0));
+}
+
+inline double wrapAngle( double angle )
+{
+    double twoPi = 2.0 * PI;
+    return angle - twoPi * floor( angle / twoPi );
+}
+
 TwoWheeledRobotController::TwoWheeledRobotController(ControllerParams controller_params) : cp(controller_params) {
     if (!ros::isInitialized()){
             int argc = 0;
@@ -175,7 +185,6 @@ void TwoWheeledRobotController::FindNearestWaypoint() {
 
 void TwoWheeledRobotController::CalculatePositionError() {
     // subtract desired velocity from current velocity
-    FindNearestWaypoint();
     std::vector<double> nearest_waypoint = waypoints[min_distance_ind];
     prev_position_error = position_error;
     position_error_x = nearest_waypoint[0]-current_pose.x;
@@ -222,7 +231,6 @@ void TwoWheeledRobotController::CalculatePositionError() {
 }
 
 void TwoWheeledRobotController::CalculateFeedforwardCommands() {
-    FindNearestWaypoint();
     // use velocity
     velocity_ff = sqrt(pow(velocity_waypoints[min_distance_ind][0],2)+pow(velocity_waypoints[min_distance_ind][1],2));
     angle_ff = atan2(velocity_waypoints[min_distance_ind][1],velocity_waypoints[min_distance_ind][0]);    // get angle_ff into range of 0 to 2*pi
@@ -237,10 +245,6 @@ void TwoWheeledRobotController::CalculateTwistCommand() {
         // linear velocity command
             // feedforward velocity based on trajectory
             // PID control law for velocity error
-    CalculatePositionError();
-    CalculateFeedforwardCommands();
-    
-    FindNearestWaypoint();
     std::cout << "nearest waypoint: " << waypoints[min_distance_ind][0] << "\t" << waypoints[min_distance_ind][1] << "\n";
     std::cout << "nearest velocity waypoint: " << velocity_waypoints[min_distance_ind][0] << "\t" << velocity_waypoints[min_distance_ind][1] << "\n";
 
@@ -347,18 +351,23 @@ void TwoWheeledRobotController::PublishCurrentRobotStatus() {
 
 }
 
-bool TwoWheeledRobotController::ReachedGoal() {
+void TwoWheeledRobotController::UpdateControllerCalculations() {
     FindNearestWaypoint();
+    CalculatePositionError();
+    CalculateFeedforwardCommands();
+    CalculateTwistCommand();
+    ReachedGoal();
+    PublishTwistCommand();
+}
+
+bool TwoWheeledRobotController::ReachedGoal() {
     if (min_distance_ind == (waypoints.size()-1)) {
         double distance_to_goal = sqrt(pow(current_pose.x-waypoints[waypoints.size()-1][0],2)+pow(current_pose.y-waypoints[waypoints.size()-1][1],2));
         std::cout << "distance_to_goal: " << distance_to_goal << "\n";
         if (distance_to_goal<cp.goal_threshold) {
            // publish velocity to zero
-           for (int iii = 0; iii < 10; iii++) {
-               twist_command.linear.x = 0;
-               twist_command.angular.z = 0;
-               PublishTwistCommand();
-           }
+           twist_command.linear.x = 0;
+           twist_command.angular.z = 0;
            std::cout << "******************************COMPLETED****************************" << "\n";
            return 1;
         }

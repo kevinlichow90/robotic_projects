@@ -1,0 +1,15 @@
+<launch>
+  <arg name="robot_name"/>
+  <arg name="init_pose"/>
+
+  <arg name="urdf_file" default="$(find xacro)/xacro.py '$(find simulation_models)/turtlebot3/urdf/turtlebot3_waffle_named.urdf.xacro' robot_name:=$(arg robot_name)"/>
+  <param name="robot_description" command="$(arg urdf_file)" />
+
+  <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="$(arg init_pose) -urdf -model $(arg robot_name) -param robot_description" />
+
+  <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen">
+     <param name="tf_prefix" value="$(arg robot_name)"/>
+  </node>
+
+  <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher" output="screen"/>
+</launch>
